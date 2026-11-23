@@ -6,10 +6,17 @@ struct SMSRecord {
     let date: Int64
 }
 
+enum SMSReadError: Error {
+    case failed(String)
+    var message: String {
+        switch self { case .failed(let s): return s }
+    }
+}
+
 enum SMSReader {
     static let dbPath = "/private/var/mobile/Library/SMS/sms.db"
 
-    static func readRecent(limit: Int32 = 200) -> Result<[SMSRecord], String> {
+    static func readRecent(limit: Int32 = 200) -> Result<[SMSRecord], SMSReadError> {
         var raw: OpaquePointer?
         let uri = "file:\(dbPath)?mode=ro"
         let status = sqlite3_open_v2(
@@ -21,7 +28,7 @@ enum SMSReader {
         guard status == SQLITE_OK, let db = raw else {
             let msg = raw.map { String(cString: sqlite3_errmsg($0)) } ?? "无法打开短信数据库"
             if let r = raw { sqlite3_close(r) }
-            return .failure(msg)
+            return .failure(.failed(msg))
         }
         defer { sqlite3_close(db) }
 
@@ -33,7 +40,7 @@ enum SMSReader {
         """
         let prep = sqlite3_prepare_v2(db, sql, -1, &stmt, nil)
         guard prep == SQLITE_OK, let s = stmt else {
-            return .failure(String(cString: sqlite3_errmsg(db)))
+            return .failure(.failed(String(cString: sqlite3_errmsg(db))))
         }
         defer { sqlite3_finalize(s) }
         sqlite3_bind_int(s, 1, limit)

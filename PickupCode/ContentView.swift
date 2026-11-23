@@ -86,7 +86,7 @@ struct ContentView: View {
         scanning = true
         switch SMSReader.readRecent() {
         case .failure(let err):
-            message = "读短信失败：\(err)"
+            message = "读短信失败：\(err.message)"
         case .success(let records):
             var seen = Set<String>()
             var found: [PickupInfo] = []
