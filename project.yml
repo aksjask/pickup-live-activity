@@ -1,0 +1,47 @@
+name: PickupCode
+options:
+  bundleIdPrefix: com.jusheng
+  deploymentTarget:
+    iOS: "16.1"
+  createIntermediateGroups: true
+
+targets:
+  PickupCode:
+    type: application
+    platform: iOS
+    sources:
+      - path: PickupCode
+    info:
+      path: PickupCode/Info.plist
+      properties:
+        CFBundleDisplayName: 取件码
+        NSSupportsLiveActivities: true
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jusheng.pickupcode
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTED_PLATFORMS: iphoneos
+    dependencies:
+      - target: PickupWidget
+        embed: true
+
+  PickupWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: PickupWidget
+      - path: PickupCode/PickupAttributes.swift
+    info:
+      path: PickupWidget/Info.plist
+      properties:
+        CFBundleDisplayName: 取件码组件
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jusheng.pickupcode.widget
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTED_PLATFORMS: iphoneos

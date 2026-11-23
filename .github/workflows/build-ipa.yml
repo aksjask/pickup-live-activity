@@ -1,0 +1,75 @@
+name: Build & Release IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode
+        run: |
+          xcodebuild -version
+          ls /Applications | grep -i xcode || true
+
+      - name: Install xcodegen
+        run: |
+          brew install xcodegen
+          xcodegen --version
+
+      - name: Generate project
+        run: xcodegen generate
+
+      - name: Build unsigned device app
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project PickupCode.xcodeproj \
+            -scheme PickupCode \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIREMENT=NO \
+            CODE_SIGN_IDENTITY="" \
+            2>&1 | tee build.log
+
+      - name: Package IPA
+        run: |
+          APP=build/Build/Products/Release-iphoneos/PickupCode.app
+          test -d "$APP" || { echo "build product missing"; exit 1; }
+          find "$APP" -maxdepth 3 -name '*.appex' -o -name 'PickupWidget*' || true
+          rm -rf Payload
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qry PickupCode.ipa Payload
+          ls -lh PickupCode.ipa
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PickupCode-ipa
+          path: PickupCode.ipa
+          retention-days: 30
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          name: 取件码 App v1.0.0
+          body: |
+            取件码钉在锁屏与灵动岛（iPhone 14 Pro+ 有灵动岛效果）
+
+            系统要求：iOS 16.1+，巨魔 TrollStore 直接安装
+
+            用法：打开 App，输入取件码和地点，点「钉到锁屏和灵动岛」。
+          files: PickupCode.ipa
