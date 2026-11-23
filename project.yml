@@ -2,7 +2,7 @@ name: PickupCode
 options:
   bundleIdPrefix: com.jusheng
   deploymentTarget:
-    iOS: "16.1"
+    iOS: "16.2"
   createIntermediateGroups: true
 
 targets:
