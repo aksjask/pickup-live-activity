@@ -19,10 +19,11 @@ jobs:
           xcodebuild -version
           ls /Applications | grep -i xcode || true
 
-      - name: Install xcodegen
+      - name: Install tools
         run: |
-          brew install xcodegen
+          brew install xcodegen ldid
           xcodegen --version
+          ldid 2>&1 | head -3 || true
 
       - name: Generate project
         run: xcodegen generate
@@ -42,6 +43,16 @@ jobs:
             CODE_SIGNING_REQUIREMENT=NO \
             CODE_SIGN_IDENTITY="" \
             2>&1 | tee build.log
+
+      - name: Apply TrollStore entitlements
+        shell: bash
+        run: |
+          APP=build/Build/Products/Release-iphoneos/PickupCode.app
+          BIN="$APP/PickupCode"
+          test -f "$BIN" || { echo "main binary missing"; exit 1; }
+          ldid -SPickupCode/PickupCode.entitlements "$BIN"
+          echo "--- embedded entitlements ---"
+          ldid -e "$BIN"
 
       - name: Package IPA
         run: |
@@ -64,12 +75,17 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
-          name: 取件码 App v1.0.0
+          tag_name: v1.1.0
+          name: 取件码 App v1.1.0（短信识别）
           body: |
-            取件码钉在锁屏与灵动岛（iPhone 14 Pro+ 有灵动岛效果）
+            取件码钉在锁屏与灵动岛 + 短信自动识别
 
-            系统要求：iOS 16.1+，巨魔 TrollStore 直接安装
+            系统要求：iOS 16.2+，巨魔 TrollStore 直接安装
 
-            用法：打开 App，输入取件码和地点，点「钉到锁屏和灵动岛」。
+            用法：
+            1. 打开 App，点「从短信识别取件码」，会自动列出最近短信里的取件码
+            2. 点一条填入，再点「钉到锁屏和灵动岛」
+            3. iPhone 14 Pro 及以上机型有灵动岛效果
+
+            说明：本版用巨魔脱沙盒权限直接读取本机短信数据库，不上传任何数据。
           files: PickupCode.ipa

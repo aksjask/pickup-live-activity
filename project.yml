@@ -27,6 +27,7 @@ targets:
     dependencies:
       - target: PickupWidget
         embed: true
+      - sdk: libsqlite3.tbd
 
   PickupWidget:
     type: app-extension
